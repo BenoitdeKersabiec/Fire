@@ -10,7 +10,7 @@ ex = Experiment("FIRE")
 
 @ex.config
 def config():
-    mode = "eval"
+    mode = "simulate"
 
     start_date = "01/01/2025"
     # Investment details
