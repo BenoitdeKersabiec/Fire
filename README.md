@@ -27,8 +27,9 @@ To change the default parameters, you can specify them using `python -m similari
 Optional arguments you can add after `with`:
 
 - `mode=<MODE>` Mode is either `simulate` or `eval`. 
-      Simulate will run a simulation with the specified parameters
-      Eval will run multiple simulation to simulate all the possible retirement dates, and evaluate the first retirement wage for a given retirement date
+
+   - `simulate` will run a simulation with the specified parameters
+   - `eval` will run multiple simulation to simulate all the possible retirement dates, and evaluate the first retirement wage for a given retirement date
 - `start_date=<DATE>` The first investment date. Default is `"01/01/2025"`.
 - `end_date=<DATE>` The last investment date (i.e. your death). Default is `"01/01/2100"`.
 - `monthly_investment=<VALUE>` The starting monthly investment amount. Default is `500`.
