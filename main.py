@@ -10,9 +10,9 @@ ex = Experiment("FIRE")
 
 @ex.config
 def config():
-    mode = "simulate"
+    mode = "eval"
 
-    starting_date = "01/01/2025"
+    start_date = "01/01/2025"
     # Investment details
     monthly_investment = 500
     investment_annual_growth_rate = 0.1
@@ -28,7 +28,7 @@ def config():
 
 @ex.capture
 def simulate(
-        starting_date,
+        start_date,
 
         monthly_investment,
         investment_annual_growth_rate,
@@ -42,7 +42,7 @@ def simulate(
         save_resutls_to_csv,
         plot=True
 ):
-    data = pd.DataFrame(index=pd.date_range(start=starting_date, end=end_date, freq="MS"))
+    data = pd.DataFrame(index=pd.date_range(start=start_date, end=end_date, freq="MS"))
 
     # How much you invest every month
     monthly_investment_increase = (1 + investment_annual_growth_rate) ** (1 / 12)
@@ -52,14 +52,14 @@ def simulate(
 
     data["Total investment"] = data["Investment"].cumsum()
 
-    data["Earning rate"] = annual_return
-    data.loc[data.index >= retirement_date, "Earning rate"] = annual_return - retirement_percentage
+    data["Annual earning rate"] = annual_return
+    data.loc[data.index >= retirement_date, "Annual earning rate"] = annual_return - retirement_percentage
 
     data["Net worth"] = 0
     for i in range(1, len(data)):
         date = data.index[i]
         data.loc[date, "Net worth"] = \
-            data.iloc[i-1]["Net worth"] * ((1 + data.iloc[1]["Earning rate"]) ** (1/12)) \
+            data.iloc[i-1]["Net worth"] * ((1 + data.iloc[1]["Annual earning rate"]) ** (1/12)) \
             + data.iloc[i]["Investment"]  # Previous net-worth * earning rate  + Monthly investment
 
     data["Wage rate"] = 0
@@ -71,7 +71,7 @@ def simulate(
         print("Results are saved to 'output.csv'")
 
     if plot:
-        data[["Net worth", "Wage"]].plot(logy=True)
+        data[["Net worth", "Wage"]].plot(logy=True, ylabel="€")
         plt.show()
 
     return data.loc[retirement_date, "Wage"]
@@ -87,9 +87,9 @@ def aux(retirement):
 
 
 @ex.capture
-def find_best_retirement_date(starting_date, end_date, save_resutls_to_csv):
+def find_best_retirement_date(start_date, end_date, save_resutls_to_csv):
     print("---------------------- Running evaluation to compute the first retirement wage ---------------------")
-    data = pd.DataFrame(index=pd.date_range(start=starting_date, end=end_date, freq="MS"))
+    data = pd.DataFrame(index=pd.date_range(start=start_date, end=end_date, freq="MS"))
     print(f"Starting computation for the {len(data)} dates")
     with multiprocessing.Pool() as date_pool:
         results = list(tqdm.tqdm(date_pool.imap_unordered(aux, data.index), total=len(data)))
@@ -98,12 +98,11 @@ def find_best_retirement_date(starting_date, end_date, save_resutls_to_csv):
     results.sort()
     data["First retirement wage"] = results
 
-    data.plot(logy=True)
-
     if save_resutls_to_csv:
         data.to_csv("output.csv")
         print("Results are saved to 'output.csv'")
 
+    data.plot(logy=True, xlabel="Retirement date", ylabel="€")
     plt.show()
 
 
