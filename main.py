@@ -1,9 +1,10 @@
 import pandas as pd
+import numpy as np
 from sacred import Experiment
 import matplotlib.pyplot as plt
+from plot import plot_data
 import multiprocessing
 import tqdm
-
 
 ex = Experiment("FIRE")
 
@@ -12,16 +13,17 @@ ex = Experiment("FIRE")
 def config():
     mode = "simulate"
 
-    start_date = "01/01/2025"
+    start_date = "01/07/2022"
     # Investment details
-    monthly_investment = 500
+    monthly_investment = 800
     investment_annual_growth_rate = 0.1
     annual_return = 0.08
+    annual_standard_deviation = 0.15
 
-    retirement_date = "01/01/2045"
+    retirement_date = "01/01/2060"
     retirement_percentage = 0.04
 
-    end_date = "01/01/2100"
+    end_date = "01/01/2080"
 
     save_resutls_to_csv = True
 
@@ -33,6 +35,7 @@ def simulate(
         monthly_investment,
         investment_annual_growth_rate,
         annual_return,
+        annual_standard_deviation,
 
         retirement_date,
         retirement_percentage,
@@ -52,14 +55,17 @@ def simulate(
 
     data["Total investment"] = data["Investment"].cumsum()
 
-    data["Annual earning rate"] = annual_return
-    data.loc[data.index >= retirement_date, "Annual earning rate"] = annual_return - retirement_percentage
+    data["Annual earning rate"] = pd.Series(
+        np.random.normal(annual_return, annual_standard_deviation, len(data)),
+        index=data.index
+    )
+    data.loc[data.index >= retirement_date, "Annual earning rate"] -= retirement_percentage
 
     data["Net worth"] = 0
     for i in range(1, len(data)):
         date = data.index[i]
         data.loc[date, "Net worth"] = \
-            data.iloc[i-1]["Net worth"] * ((1 + data.iloc[1]["Annual earning rate"]) ** (1/12)) \
+            data.iloc[i - 1]["Net worth"] * ((1 + data.iloc[i]["Annual earning rate"]) ** (1 / 12)) \
             + data.iloc[i]["Investment"]  # Previous net-worth * earning rate  + Monthly investment
 
     data["Wage rate"] = 0
@@ -71,7 +77,7 @@ def simulate(
         print("Results are saved to 'output.csv'")
 
     if plot:
-        data[["Net worth", "Wage"]].plot(logy=True, ylabel="€")
+        plot_data(data[["Net worth", "Wage"]])
         plt.show()
 
     return data.loc[retirement_date, "Wage"]
